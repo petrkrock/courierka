@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import App from './App';
 import './index.css';
-import { registerSW } from './lib/registerSW';
+import { registerServiceWorker } from './lib/registerSW';
+registerServiceWorker();
 
 // Любая ошибка в приложении → dataLayer для GTM-подобной аналитики (если подключена).
 window.addEventListener('error', (e) => {
