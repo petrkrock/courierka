@@ -1,11 +1,20 @@
-import { Mail, Globe } from 'lucide-react';
-import { useStoreVersion } from '@/lib/store';
+import { Bell, Mail, Globe } from 'lucide-react';
+import { getStore, useStoreVersion } from '@/lib/store';
+import { isToday } from '@/lib/utils';
 
-// Desktop-заголовок (lg+). На мобильных навигация — BottomNav.
-// Быстрые кнопки настраиваются в Настройки → Быстрые кнопки (quickLinks).
+// Shown on desktop only (lg and up) — on mobile, navigation is handled
+// entirely by BottomNav.tsx (including the "Ещё" button, which replaces
+// what used to be this header's hamburger menu), full-screen, no top bar.
 export default function Header() {
-  useStoreVersion(); // ре-рендер на realtime-изменения (см. src/lib/realtime.ts)
-  const quickLinks = { mail: '', platform: '' }; // vzdelivery: quickLinks пока не редактируются в настройках
+  useStoreVersion(); // re-render on real-time changes from other users (see src/lib/realtime.ts)
+  const store = getStore();
+  const todayTasks = store.tasks.filter(t => !t.completed && isToday(t.dueDate));
+  const newTickets = store.tickets.filter(t => (t.status === 'Новая' || t.status === 'Новый с сайта') && !t.deletedAt);
+  const notifCount = todayTasks.length + newTickets.length;
+
+  // Быстрые кнопки: ссылки настраиваются в Настройки → Быстрые кнопки.
+  // Кнопка показывается только если ссылка задана (фолбэк для старых настроек).
+  const quickLinks = store.settings.quickLinks || { mail: '', platform: '' };
 
   return (
     <header
@@ -38,6 +47,16 @@ export default function Header() {
               <Globe size={20} className="text-gray-600" />
             </a>
           )}
+          <div className="relative">
+            <button className="p-2 rounded-md hover:bg-brand-gray transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+              <Bell size={20} className="text-gray-600" />
+              {notifCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-brand-red rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+                  {notifCount > 9 ? '9+' : notifCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </header>

@@ -1,46 +1,67 @@
-import { Truck, Settings, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Truck, ShoppingCart, CheckSquare, BarChart2, TrendingUp, HeadphonesIcon, Settings, Database, Video, BookOpen, Server, Percent } from 'lucide-react';
 import { canAccess, isAdmin } from '@/lib/auth';
-import type { AppUser } from '@/types';
 
 export interface NavItem {
   to: string;
   label: string;
-  icon: LucideIcon;
-  adminOnly?: boolean;
+  icon: React.ElementType;
+  visible: () => boolean;
 }
 
-export interface NavSection {
-  title: string;
-  paths: string[];
-}
-
-const ALL_NAV: NavItem[] = [
-  { to: '/delivery', label: 'Доставка', icon: Truck },
-  { to: '/settings', label: 'Настройки', icon: Settings, adminOnly: true },
+/**
+ * Single source of truth for every section in the app's main navigation —
+ * both Sidebar.tsx (desktop) and BottomNav.tsx (mobile) render from this
+ * list, so permission rules only ever need to change in one place.
+ */
+export const ALL_NAV_ITEMS: NavItem[] = [
+  { to: '/dashboard', label: 'Дашборд', icon: LayoutDashboard, visible: () => canAccess('dashboard') },
+  { to: '/suppliers', label: 'Поставщики', icon: Truck, visible: () => canAccess('suppliers') },
+  { to: '/buyers', label: 'Покупатели', icon: ShoppingCart, visible: () => canAccess('buyers') },
+  { to: '/tasks', label: 'Задачи', icon: CheckSquare, visible: () => canAccess('tasks') },
+  { to: '/support', label: 'Поддержка', icon: HeadphonesIcon, visible: () => canAccess('support') },
+  { to: '/leads', label: 'База лидов', icon: Database, visible: () => canAccess('leads') },
+  { to: '/media', label: 'Медиа сервис', icon: Video, visible: () => canAccess('media') },
+  { to: '/pricing', label: 'Проценка', icon: Percent, visible: () => canAccess('pricing') },
+  { to: '/planfact', label: 'План / Факт', icon: TrendingUp, visible: () => canAccess('planfact') },
+  { to: '/analytics', label: 'Аналитика', icon: BarChart2, visible: () => canAccess('analytics') },
+  { to: '/settings', label: 'Настройки', icon: Settings, visible: () => isAdmin() },
+  { to: '/knowledge', label: 'База знаний', icon: BookOpen, visible: () => canAccess('knowledge') },
+  { to: '/database', label: 'База данных', icon: Database, visible: () => isAdmin() },
+  { to: '/server', label: 'Сервер', icon: Server, visible: () => isAdmin() },
 ];
 
-export const NAV_SECTIONS: NavSection[] = [
-  { title: 'Работа', paths: ['/delivery'] },
-  { title: 'Система', paths: ['/settings'] },
+/**
+ * Section grouping for the sidebar — items are grouped under small
+ * uppercase headings. Items invisible to the current user (permissions)
+ * are filtered out per section by Sidebar.tsx.
+ */
+export const NAV_SECTIONS: Array<{ title: string; paths: string[] }> = [
+  { title: 'Работа', paths: ['/dashboard', '/planfact', '/suppliers', '/buyers', '/tasks', '/support', '/leads'] },
+  { title: 'Сервисы', paths: ['/media', '/pricing', '/analytics', '/knowledge'] }, // ТЗ v1.24.2: +Проценка
+  { title: 'Система', paths: ['/settings', '/database'] },
 ];
 
-// Какие пункты показывать в мобильной нижней панели (основные вкладки).
-const MOBILE_PRIMARY_PRIORITY: string[] = ['/delivery'];
-
+/** Nav items the current user is allowed to see, in the order above. */
 export function getVisibleNavItems(): NavItem[] {
-  return ALL_NAV.filter(item => {
-    if (item.adminOnly && !isAdmin()) return false;
-    if (item.to === '/delivery') return canAccess('delivery');
-    return true;
-  });
+  return ALL_NAV_ITEMS.filter(item => item.visible());
 }
+
+/**
+ * The 3 sections that get their own bottom-nav tab on mobile (in priority
+ * order — first 3 the current user has access to). Everything else,
+ * including these 3 minus whichever didn't make the cut, is reachable via
+ * the "Ещё" tab, which opens the full Sidebar.
+ */
+const MOBILE_PRIMARY_PRIORITY = ['/support', '/suppliers', '/buyers', '/media', '/tasks'];
 
 export function getMobilePrimaryTabs(): NavItem[] {
-  const items = getVisibleNavItems();
-  const byPath = new Map(items.map(item => [item.to, item]));
-  const primary = MOBILE_PRIMARY_PRIORITY.map(p => byPath.get(p)).filter((x): x is NavItem => Boolean(x));
-  const rest = items.filter(item => !MOBILE_PRIMARY_PRIORITY.includes(item.to));
-  return [...primary, ...rest].slice(0, 4);
+  const visible = getVisibleNavItems();
+  const byPath = new Map(visible.map(item => [item.to, item]));
+  const primary: NavItem[] = [];
+  for (const path of MOBILE_PRIMARY_PRIORITY) {
+    const item = byPath.get(path);
+    if (item) primary.push(item);
+    if (primary.length === 3) break;
+  }
+  return primary;
 }
-
-export type { AppUser };
