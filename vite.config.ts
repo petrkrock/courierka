@@ -28,11 +28,11 @@ export default defineConfig({
       devOptions: { enabled: false },
       includeAssets: ["favicon.ico", "icons/apple-touch-icon.png"],
       manifest: {
-        name: "ВсемЗапчасти — Доставка",
-        short_name: "ВЗ Доставка",
-        description: "Сервис доставки (DBO): маршруты самовывоза, города, задания на доставку, тарифы и поставщики",
+        name: "ВсемЗапчасти CRM",
+        short_name: "ВЗ CRM",
+        description: "CRM для управления поставщиками, покупателями, задачами, обращениями и медиаразмещениями",
         id: "/",
-        start_url: "/delivery",
+        start_url: "/dashboard",
         scope: "/",
         display: "fullscreen",
         // Browsers try each mode left-to-right, falling back if a mode
@@ -72,7 +72,7 @@ export default defineConfig({
           {
             urlPattern: ({ sameOrigin, request }) => sameOrigin && request.destination === "image",
             handler: "StaleWhileRevalidate",
-            options: { cacheName: "vz-delivery-images" },
+            options: { cacheName: "vz-crm-images" },
           },
         ],
       },
